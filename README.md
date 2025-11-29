@@ -1,2 +1,75 @@
-# Brain_Tumor_Detection
-Brain Tumor Detection is a web app that uses YOLOv8 to detect brain tumors in MRI images. Upload an image to see predictions with bounding boxes and semi-transparent masks, providing clear visualization of detected tumor regions.
+# 🧠 Brain Tumor Detection using YOLO and Streamlit
+
+A web application to detect brain tumors from MRI images using YOLOv8 and visualize predictions with bounding boxes and semi-transparent masks. Built with Python, OpenCV, and Streamlit.
+
+# Features
+
+Upload MRI images (JPG, PNG) for analysis.
+
+Detect brain tumors with YOLOv8 model.
+
+Display bounding boxes with transparent masks highlighting detected regions.
+
+Shows prediction confidence and label ("Positive" or "Negative").
+
+Interactive web interface powered by Streamlit.
+
+# Installation
+
+Clone the repository:
+
+git clone https://github.com/your-username/brain-tumor-detection.git
+cd brain-tumor-detection
+
+
+Create a virtual environment (optional but recommended):
+
+python -m venv venv
+source venv/bin/activate      # Linux/Mac
+venv\Scripts\activate         # Windows
+
+
+Install dependencies:
+
+pip install -r requirements.txt
+
+
+Download your YOLO model (brain_tumor_detection.pt) and place it in the project folder.
+
+Usage
+
+Run the Streamlit app:
+
+streamlit run main.py
+
+
+Open the provided URL (usually http://localhost:8501) in your browser and upload an MRI image to see predictions.
+
+# Project Structure
+brain-tumor-detection/
+│
+├── main.py                # Streamlit app
+├── brain_tumor_detection.pt  # YOLOv11 trained model
+├── background.jpg         # Background image for the app
+├── requirements.txt       # Python dependencies
+└── README.md
+
+# Dependencies
+
+Python >= 3.10
+
+Streamlit
+
+OpenCV (opencv-python)
+
+Ultralytics YOLO (ultralytics)
+
+NumPy
+
+Pillow
+
+
+
+# License
+
+This project is licensed under the MIT License.
