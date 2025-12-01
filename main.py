@@ -6,9 +6,9 @@ from PIL import Image
 import os
 import base64
 
-# -----------------------------
-# Function to set background image
-# -----------------------------
+# -----------------------------------
+# Background Image Function
+# -----------------------------------
 def add_bg_from_local(image_file):
     if os.path.exists(image_file):
         with open(image_file, "rb") as img:
@@ -19,6 +19,7 @@ def add_bg_from_local(image_file):
             .stApp {{
                 background-image: url("data:image/jpeg;base64,{encoded}");
                 background-size: cover;
+                background-attachment: fixed;
             }}
             </style>
             """,
@@ -27,82 +28,104 @@ def add_bg_from_local(image_file):
     else:
         st.warning("Background image not found!")
 
-# -----------------------------
-# Page configuration
-# -----------------------------
+
+# -----------------------------------
+# Page Configuration
+# -----------------------------------
 st.set_page_config(
-    page_title="Brain Tumor Detection",
+    page_title="Brain Tumor MRI Plane Classification",
     layout="centered",
     page_icon="🧠"
 )
 
-# -----------------------------
 # Add background
-# -----------------------------
 add_bg_from_local(r"E:\Projects\Computer VIsion\Brain_Tumor_Detection\background.jpg")
 
-st.title("🧠 Brain Tumor Detection using YOLO")
+st.title("🧠 Brain MRI Plane Classification")
+st.write("Upload an MRI image to detect whether it is **Coronal**, **Axial**, or **Sagittal**.")
 
-# -----------------------------
-# Load YOLO model
-# -----------------------------
+
+# -----------------------------------
+# Load YOLO Model
+# -----------------------------------
 MODEL_PATH = r"E:\Projects\Computer VIsion\Brain_Tumor_Detection\brain_tumor_detection.pt"
+
 if os.path.exists(MODEL_PATH):
     model = YOLO(MODEL_PATH)
 else:
-    st.error("Model not found! Make sure the path is correct.")
+    st.error("Model not found! Please check your model path.")
 
-# -----------------------------
-# File uploader
-# -----------------------------
-uploaded_file = st.file_uploader("Upload an MRI image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    # Open image
+# ===================================
+# --- Prediction Function -----------
+# ===================================
+def predict_and_display(model, uploaded_file):
+    # Load and convert image
     img = Image.open(uploaded_file).convert("RGB")
     img_array = np.array(img)
 
-    st.image(img, caption="Uploaded Image", use_column_width=True)
+    st.subheader("📤 Uploaded Image")
+    st.image(img, use_column_width=True)
 
-    # -----------------------------
-    # Run YOLO inference
-    # -----------------------------
+    # Run YOLO prediction
     results = model(img_array)[0]
 
-    # -----------------------------
-    # Draw bounding boxes + mask
-    # -----------------------------
-    overlay = img_array.copy()  # Copy to apply transparent mask
+    # Class names
+    CLASS_MAP = {0: "Coronal", 1: "Axial", 2: "Sagittal"}
 
-    for box, score, cls in zip(results.boxes.xyxy, results.boxes.conf, results.boxes.cls):
-        x1, y1, x2, y2 = map(int, box)
-        label = "Positive" if int(cls) == 0 else "Negative"
+    # If NO detections
+    if len(results.boxes) == 0:
+        st.error("No MRI plane detected!")
+        return
 
-        # Random color for each detection
-        color = tuple(np.random.randint(0, 256, size=3).tolist())
+    # ----------------------------------------
+    #  GET ONLY the highest-confidence result
+    # ----------------------------------------
+    max_conf_index = np.argmax(results.boxes.conf.cpu().numpy())
+    best_box = results.boxes.xyxy[max_conf_index]
+    best_conf = results.boxes.conf[max_conf_index]
+    best_cls = int(results.boxes.cls[max_conf_index])
 
-        # Draw rectangle border
-        cv2.rectangle(img_array, (x1, y1), (x2, y2), color, 2)
+    x1, y1, x2, y2 = map(int, best_box)
+    label = CLASS_MAP.get(best_cls, f"Class {best_cls}")
 
-        # Put label
-        cv2.putText(
-            img_array,
-            f"{label} {score:.2f}",
-            (x1, y1 - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            color,
-            2
-        )
+    # Prepare two images
+    output_img = img_array.copy()
+    overlay = img_array.copy()
 
-        # Fill mask inside bounding box with transparency
-        overlay[y1:y2, x1:x2] = (overlay[y1:y2, x1:x2] * 0.4 + np.array(color) * 0.6).astype(np.uint8)
+    # Random color
+    color = tuple(np.random.randint(0, 255, 3).tolist())
 
-    # Merge overlay
-    alpha = 0.6  # Transparency factor
-    final_img = cv2.addWeighted(overlay, alpha, img_array, 1 - alpha, 0)
+    # Draw box
+    cv2.rectangle(output_img, (x1, y1), (x2, y2), color, 3)
 
-    # -----------------------------
-    # Show result
-    # -----------------------------
-    st.image(final_img, caption="Prediction with Mask", use_column_width=True)
+    # Draw label
+    cv2.putText(
+        output_img,
+        f"{label} {best_conf:.2f}",
+        (x1, max(y1 - 10, 20)),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.7,
+        color,
+        2
+    )
+
+    # Transparent overlay mask
+    overlay[y1:y2, x1:x2] = (
+        overlay[y1:y2, x1:x2] * 0.4 + np.array(color) * 0.6
+    ).astype(np.uint8)
+
+    # Final blended image
+    final_img = cv2.addWeighted(overlay, 0.4, output_img, 0.6, 0)
+
+    st.subheader(" Predicted Result")
+    st.image(final_img, caption=f"Detected Plane: {label}", use_column_width=True)
+
+
+# -----------------------------------
+# File Uploader
+# -----------------------------------
+uploaded_file = st.file_uploader("Upload MRI Image", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    predict_and_display(model, uploaded_file)
