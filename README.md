@@ -1,12 +1,12 @@
 # 🧠 Brain Tumor Detection using YOLO and Streamlit
 
-A web app to detect brain tumors from MRI images using YOLOv8 and visualize predictions with bounding boxes and semi-transparent masks. Built with Python, OpenCV, and Streamlit.
+A web app to detect brain tumors from MRI images using YOLOv11 and visualize predictions with bounding boxes and semi-transparent masks. Built with Python, OpenCV, and Streamlit.
 
 # Features
 
 Upload MRI images (JPG, PNG) for analysis.
 
-Detect brain tumors with YOLOv8.
+Detect brain tumors with YOLOv11.
 
 Display bounding boxes with transparent masks highlighting detected regions.
 
